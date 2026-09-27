@@ -44,7 +44,16 @@
         const f = async t => {
           let r = [], o = 0;
           while (true) {
-            const res = await fetch(`https://api.scratch.mit.edu/studios/${s}/${t}?limit=40&offset=${o}`);
+            // ★修正：中継サービスを外して直接Scratchから取得するように戻しました
+            const targetUrl = `https://api.scratch.mit.edu/studios/${s}/${t}?limit=40&offset=${o}`;
+            const res = await fetch(targetUrl);
+            
+            // 通信エラー（ID間違いなど）の判定
+            if (!res.ok) {
+              if (res.status === 404) throw new Error("スタジオが見つかりません。IDが間違っていませんか？");
+              throw new Error(`Scratchサーバーエラー (${res.status})`);
+            }
+            
             const data = await res.json();
             if (!Array.isArray(data) || data.length === 0) break;
             r.push(...data);
@@ -73,7 +82,9 @@
 
         resultDiv.innerHTML = html;
       } catch (err) {
-        resultDiv.innerHTML = "<p style='color:red; text-align:center;'><b>エラーが発生しました。IDが正しいか確認してください。</b></p>";
+        console.error(err);
+        // エラーの理由を具体的に画面に出すようにしました
+        resultDiv.innerHTML = `<p style='color:red; text-align:center;'><b>エラーが発生しました:</b><br>${err.message}</p>`;
       }
     }
   </script>
